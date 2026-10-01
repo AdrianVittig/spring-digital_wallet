@@ -1,0 +1,96 @@
+package com.vittig.spring_digital_wallet.service.auth.impl;
+
+import com.vittig.spring_digital_wallet.data.entity.User;
+import com.vittig.spring_digital_wallet.data.repository.AuthRepository;
+import com.vittig.spring_digital_wallet.data.util.ModelMapperUtil;
+import com.vittig.spring_digital_wallet.dto.auth.AuthResponseDto;
+import com.vittig.spring_digital_wallet.dto.auth.login.LoginRequestDto;
+import com.vittig.spring_digital_wallet.dto.auth.register.RegisterRequestDto;
+import com.vittig.spring_digital_wallet.exception.InvalidInputException;
+import com.vittig.spring_digital_wallet.exception.ObjectNotFoundException;
+import com.vittig.spring_digital_wallet.service.auth.contract.AuthService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+
+    private final AuthRepository authRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ModelMapperUtil modelMapper;
+
+    @Override
+    @Transactional
+    public AuthResponseDto registerUser(RegisterRequestDto registerRequestDto){
+        User user = new User();
+
+        validateInputFields(registerRequestDto);
+
+        String encodedPassword = this.passwordEncoder.encode(registerRequestDto.getPassword());
+
+        user.setEmail(registerRequestDto.getEmail());
+        user.setPassword(encodedPassword);
+
+        return this.modelMapper.map(this.authRepository.save(user), AuthResponseDto.class);
+    }
+
+    @Override
+    @Transactional
+    public void loginUser(LoginRequestDto loginRequestDto) {
+        validateInputLoginFields(loginRequestDto);
+
+        User user = this.authRepository.findByEmail(loginRequestDto.getEmail()).orElseThrow(
+                () -> new ObjectNotFoundException("Object not found!")
+        );
+
+        boolean passwordMatches = passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword());
+
+        if(!passwordMatches){
+            throw new InvalidInputException("Password is not correct!");
+        }
+    }
+
+    private void validateInputFields(RegisterRequestDto registerRequestDto){
+        if(registerRequestDto.getEmail() == null || registerRequestDto.getPassword() == null
+                || registerRequestDto.getConfirmPassword() == null){
+            throw new InvalidInputException("All fields are required!");
+        }
+
+        if(registerRequestDto.getEmail().isEmpty() || registerRequestDto.getPassword().isEmpty()
+                || registerRequestDto.getConfirmPassword().isEmpty()){
+            throw new InvalidInputException("All fields must be filled!");
+        }
+
+        if(registerRequestDto.getEmail().equals(" ") || registerRequestDto.getPassword().equals(" ")
+                || registerRequestDto.getConfirmPassword().equals(" ")){
+            throw new InvalidInputException("All fields must be filled!");
+        }
+
+        if(!registerRequestDto.getPassword().equals(registerRequestDto.getConfirmPassword())){
+            throw new InvalidInputException("Passwords must match!");
+        }
+
+        boolean emailExists = this.authRepository.existsByEmail(registerRequestDto.getEmail());
+
+        if(emailExists){
+            throw new InvalidInputException("Email already exists!");
+        }
+    }
+
+    private void validateInputLoginFields(LoginRequestDto loginRequestDto){
+        if(loginRequestDto.getEmail() == null || loginRequestDto.getPassword() == null){
+            throw new InvalidInputException("All fields are required!");
+        }
+
+        if(loginRequestDto.getEmail().isEmpty() || loginRequestDto.getPassword().isEmpty()){
+            throw new InvalidInputException("All fields must be filled!");
+        }
+
+        if(loginRequestDto.getEmail().equals(" ") || loginRequestDto.getPassword().equals(" ")){
+            throw new InvalidInputException("All fields must be filled!");
+        }
+    }
+}
