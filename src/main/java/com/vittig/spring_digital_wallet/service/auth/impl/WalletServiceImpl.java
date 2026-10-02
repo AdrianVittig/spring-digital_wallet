@@ -7,7 +7,6 @@
     import com.vittig.spring_digital_wallet.dto.wallet.WalletDto;
     import com.vittig.spring_digital_wallet.exception.InvalidInputException;
     import com.vittig.spring_digital_wallet.exception.ObjectNotFoundException;
-    import com.vittig.spring_digital_wallet.service.auth.contract.AuthService;
     import com.vittig.spring_digital_wallet.service.auth.contract.WalletService;
     import lombok.RequiredArgsConstructor;
     import org.modelmapper.ModelMapper;
@@ -53,6 +52,11 @@
             syncWalletAndOwner(owner, wallet);
 
             return this.modelMapper.map(this.walletRepository.save(wallet), WalletDto.class);
+        }
+
+        @Override
+        public Wallet getEntityByIdForUpdate(Long id) {
+            return null;
         }
 
         @Override
