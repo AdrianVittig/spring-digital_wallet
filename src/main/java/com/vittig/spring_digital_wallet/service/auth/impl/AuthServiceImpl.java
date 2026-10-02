@@ -2,7 +2,9 @@ package com.vittig.spring_digital_wallet.service.auth.impl;
 
 import com.vittig.spring_digital_wallet.data.entity.User;
 import com.vittig.spring_digital_wallet.data.repository.AuthRepository;
-import com.vittig.spring_digital_wallet.data.util.ModelMapperUtil;
+import com.vittig.spring_digital_wallet.dto.auth.login.LoginSuccessfulDto;
+import com.vittig.spring_digital_wallet.util.JwtService;
+import com.vittig.spring_digital_wallet.util.ModelMapperUtil;
 import com.vittig.spring_digital_wallet.dto.auth.AuthResponseDto;
 import com.vittig.spring_digital_wallet.dto.auth.login.LoginRequestDto;
 import com.vittig.spring_digital_wallet.dto.auth.register.RegisterRequestDto;
@@ -21,6 +23,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapperUtil modelMapper;
+    private final JwtService jwtService;
 
     @Override
     @Transactional
@@ -38,19 +41,26 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
-    public void loginUser(LoginRequestDto loginRequestDto) {
+    public LoginSuccessfulDto loginUser(LoginRequestDto loginRequestDto) {
         validateInputLoginFields(loginRequestDto);
 
         User user = this.authRepository.findByEmail(loginRequestDto.getEmail()).orElseThrow(
-                () -> new ObjectNotFoundException("Object not found!")
+                () -> new ObjectNotFoundException("Invalid email or password!")
         );
 
         boolean passwordMatches = passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword());
 
         if(!passwordMatches){
-            throw new InvalidInputException("Password is not correct!");
+            throw new InvalidInputException("Invalid email or password!");
         }
+
+        String token = jwtService.generateToken(user);
+
+        LoginSuccessfulDto loginSuccessfulDto = new LoginSuccessfulDto();
+
+        loginSuccessfulDto.setToken(token);
+
+        return loginSuccessfulDto;
     }
 
     private void validateInputFields(RegisterRequestDto registerRequestDto){

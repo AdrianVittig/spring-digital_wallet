@@ -1,4 +1,4 @@
-package com.vittig.spring_digital_wallet.data.util;
+package com.vittig.spring_digital_wallet.util;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
