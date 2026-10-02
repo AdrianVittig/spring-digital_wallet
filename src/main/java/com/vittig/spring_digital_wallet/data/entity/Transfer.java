@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -27,5 +28,5 @@ public class Transfer extends BaseEntity{
     @Enumerated(EnumType.STRING)
     private TransferStatus status;
     @OneToMany(mappedBy = "transfer")
-    private List<LedgerEntry> entryList;
+    private List<LedgerEntry> entryList = new ArrayList<>();
 }
