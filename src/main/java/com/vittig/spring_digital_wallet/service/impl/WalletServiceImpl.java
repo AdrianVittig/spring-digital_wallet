@@ -1,4 +1,4 @@
-    package com.vittig.spring_digital_wallet.service.auth.impl;
+    package com.vittig.spring_digital_wallet.service.impl;
 
     import com.vittig.spring_digital_wallet.data.entity.User;
     import com.vittig.spring_digital_wallet.data.entity.Wallet;
@@ -7,7 +7,7 @@
     import com.vittig.spring_digital_wallet.dto.wallet.WalletDto;
     import com.vittig.spring_digital_wallet.exception.InvalidInputException;
     import com.vittig.spring_digital_wallet.exception.ObjectNotFoundException;
-    import com.vittig.spring_digital_wallet.service.auth.contract.WalletService;
+    import com.vittig.spring_digital_wallet.service.contract.WalletService;
     import lombok.RequiredArgsConstructor;
     import org.modelmapper.ModelMapper;
     import org.springframework.security.core.Authentication;

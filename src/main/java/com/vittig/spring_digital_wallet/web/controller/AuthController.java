@@ -4,7 +4,7 @@ import com.vittig.spring_digital_wallet.dto.auth.AuthResponseDto;
 import com.vittig.spring_digital_wallet.dto.auth.login.LoginRequestDto;
 import com.vittig.spring_digital_wallet.dto.auth.login.LoginSuccessfulDto;
 import com.vittig.spring_digital_wallet.dto.auth.register.RegisterRequestDto;
-import com.vittig.spring_digital_wallet.service.auth.contract.AuthService;
+import com.vittig.spring_digital_wallet.service.contract.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

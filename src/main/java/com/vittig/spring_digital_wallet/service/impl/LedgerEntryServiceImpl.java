@@ -1,11 +1,11 @@
-package com.vittig.spring_digital_wallet.service.auth.impl;
+package com.vittig.spring_digital_wallet.service.impl;
 
 import com.vittig.spring_digital_wallet.data.entity.LedgerEntry;
 import com.vittig.spring_digital_wallet.data.entity.Transfer;
 import com.vittig.spring_digital_wallet.data.entity.Wallet;
 import com.vittig.spring_digital_wallet.data.repository.LedgerEntryRepository;
 import com.vittig.spring_digital_wallet.data.util.MovementType;
-import com.vittig.spring_digital_wallet.service.auth.contract.LedgerEntryService;
+import com.vittig.spring_digital_wallet.service.contract.LedgerEntryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,4 +1,4 @@
-package com.vittig.spring_digital_wallet.service.auth.contract;
+package com.vittig.spring_digital_wallet.service.contract;
 
 import com.vittig.spring_digital_wallet.dto.auth.AuthResponseDto;
 import com.vittig.spring_digital_wallet.dto.auth.login.LoginRequestDto;
