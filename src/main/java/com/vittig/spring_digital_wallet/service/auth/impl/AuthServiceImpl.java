@@ -3,6 +3,7 @@ package com.vittig.spring_digital_wallet.service.auth.impl;
 import com.vittig.spring_digital_wallet.data.entity.User;
 import com.vittig.spring_digital_wallet.data.repository.AuthRepository;
 import com.vittig.spring_digital_wallet.dto.auth.login.LoginSuccessfulDto;
+import com.vittig.spring_digital_wallet.service.auth.contract.WalletService;
 import com.vittig.spring_digital_wallet.util.JwtService;
 import com.vittig.spring_digital_wallet.util.ModelMapperUtil;
 import com.vittig.spring_digital_wallet.dto.auth.AuthResponseDto;
@@ -24,6 +25,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final ModelMapperUtil modelMapper;
     private final JwtService jwtService;
+    private final WalletService walletService;
 
     @Override
     @Transactional
@@ -36,6 +38,8 @@ public class AuthServiceImpl implements AuthService {
 
         user.setEmail(registerRequestDto.getEmail());
         user.setPassword(encodedPassword);
+
+        this.walletService.createWallet(user);
 
         return this.modelMapper.map(this.authRepository.save(user), AuthResponseDto.class);
     }
