@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 public interface WalletService {
     WalletDto getCurrentWallet();
     WalletDto createWallet(User owner);
+    Wallet getEntityById(Long id);
     Wallet getEntityByIdForUpdate(Long id);
 
     WalletDto topUpWallet(BigDecimal amount);

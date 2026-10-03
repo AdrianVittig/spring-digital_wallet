@@ -51,6 +51,42 @@ public class TransferServiceImpl implements TransferService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<TransferDto> filterTransfers(
+            BigDecimal minAmount, BigDecimal maxAmount,
+            LocalDateTime startDate, LocalDateTime endDate,
+            TransferStatus status) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        validateAuthentication(authentication);
+
+        User user = (User) authentication.getPrincipal();
+
+        Long walletId = user.getWallet().getId();
+
+        if(maxAmount != null && maxAmount.compareTo(BigDecimal.ZERO) < 0){
+            throw new InvalidInputException("Max amount must be greater than or equal to 0");
+        }
+
+        if(minAmount != null && minAmount.compareTo(BigDecimal.ZERO) < 0){
+            throw new InvalidInputException("Min amount must be greater than or equal to 0");
+        }
+
+        if((maxAmount != null && minAmount != null) && minAmount.compareTo(maxAmount) > 0){
+            throw new InvalidInputException("Max amount must be greater or equal to minAmount");
+        }
+
+        if((startDate != null && endDate != null) && startDate.isAfter(endDate)){
+            throw new InvalidInputException("Start date must not be after end date");
+        }
+
+        return this.modelMapper.mapList(
+                this.transferRepository.filter(walletId, minAmount, maxAmount, startDate, endDate, status),
+                TransferDto.class
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public TransferDto getTransferById(Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

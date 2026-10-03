@@ -55,8 +55,17 @@
         }
 
         @Override
+        public Wallet getEntityById(Long id) {
+            return this.walletRepository.getByIdForUpdate(id).orElseThrow(
+                    () -> new ObjectNotFoundException("Wallet not found!")
+            );
+        }
+
+        @Override
         public Wallet getEntityByIdForUpdate(Long id) {
-            return null;
+            return this.walletRepository.getByIdForUpdate(id).orElseThrow(
+                    () -> new ObjectNotFoundException("Wallet not found!")
+            );
         }
 
         @Override
