@@ -1,6 +1,7 @@
 package com.vittig.spring_digital_wallet.data.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,6 +22,9 @@ import java.util.List;
 public class User extends BaseEntity implements UserDetails {
     private String email;
     private String password;
+
+    @OneToOne(mappedBy = "user")
+    private Wallet wallet;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
