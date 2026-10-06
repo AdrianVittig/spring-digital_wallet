@@ -6,6 +6,8 @@ import com.vittig.spring_digital_wallet.dto.auth.login.LoginRequestDto;
 import com.vittig.spring_digital_wallet.dto.auth.login.LoginSuccessfulDto;
 import com.vittig.spring_digital_wallet.dto.auth.register.RegisterRequestDto;
 import com.vittig.spring_digital_wallet.dto.auth.register.RegisterSuccessfulDto;
+import com.vittig.spring_digital_wallet.exception.InputValidationException;
+import com.vittig.spring_digital_wallet.exception.ObjectNotFoundException;
 import com.vittig.spring_digital_wallet.service.contract.AuthService;
 import com.vittig.spring_digital_wallet.service.contract.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +23,17 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional
     public LoginSuccessfulDto login(LoginRequestDto dto) {
-        User user = new User();
+        if(dto.getEmail() == null || dto.getPassword() == null){
+            throw new InputValidationException("All fields are required!");
+        }
 
-        user.setEmail(dto.getEmail());
-        user.setPassword(this.passwordEncoder.encode(dto.getPassword()));
+        User user = this.authRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new InputValidationException("Incorrect credentials!"));
+
+        if(!passwordEncoder.matches(dto.getPassword(), user.getPassword())){
+            throw new InputValidationException("Incorrect credentials!");
+        }
 
         String token = jwtService.generateToken(user);
 
@@ -36,7 +43,22 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public RegisterSuccessfulDto register(RegisterRequestDto dto) {
+        if(dto.getEmail() == null || dto.getPassword() == null || dto.getConfirmPassword() == null){
+            throw new InputValidationException("All fields are required!");
+        }
+
+        boolean alreadyExists = this.authRepository.existsByEmail(dto.getEmail());
+
+        if(alreadyExists){
+            throw new InputValidationException("Email is already registered!");
+        }
+
+        if(!dto.getPassword().equals(dto.getConfirmPassword())){
+            throw new InputValidationException("Passwords must match!");
+        }
+
         User user = new User();
 
         user.setEmail(dto.getEmail());
