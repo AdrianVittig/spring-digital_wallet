@@ -57,6 +57,12 @@ public class SecurityConfig {
     }
 
     @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter(){
+        JwtAuthenticationConverter jwtAuthenticationConverterVariable = new JwtAuthenticationConverter();
+        return jwtAuthenticationConverterVariable;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
         return http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -65,6 +71,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(https -> https
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated())
+                .oauth2ResourceServer(oAuth -> oAuth
+                        .jwt(converter -> converter.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
     }
 }
