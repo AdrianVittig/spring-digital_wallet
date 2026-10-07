@@ -13,6 +13,7 @@ import com.vittig.spring_digital_wallet.exception.InvalidAuthenticationException
 import com.vittig.spring_digital_wallet.exception.ObjectNotFoundException;
 import com.vittig.spring_digital_wallet.service.contract.AuthService;
 import com.vittig.spring_digital_wallet.service.contract.TransferService;
+import com.vittig.spring_digital_wallet.service.contract.WalletEntryService;
 import com.vittig.spring_digital_wallet.service.contract.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -29,6 +30,7 @@ import java.util.List;
 public class TransferServiceImpl implements TransferService {
 
     private final TransferRepository transferRepository;
+    private final WalletEntryService walletEntryService;
     private final WalletService walletService;
     private final AuthService authService;
     private final ModelMapperUtil modelMapper;
@@ -87,21 +89,6 @@ public class TransferServiceImpl implements TransferService {
         senderWallet.setCurrentBalance(senderWallet.getCurrentBalance().subtract(amount));
         recipientWallet.setCurrentBalance(recipientWallet.getCurrentBalance().add(amount));
 
-        WalletEntry walletEntrySender = new WalletEntry();
-        walletEntrySender.setAmount(transfer.getAmount());
-        walletEntrySender.setEntryType(EntryType.OUTCOMING);
-        walletEntrySender.setTransfer(transfer);
-        walletEntrySender.setWallet(senderWallet);
-        senderWallet.getEntries().add(walletEntrySender);
-
-        WalletEntry walletEntryRecipient = new WalletEntry();
-        walletEntryRecipient.setAmount(transfer.getAmount());
-        walletEntryRecipient.setEntryType(EntryType.INCOMING);
-        walletEntryRecipient.setTransfer(transfer);
-        walletEntryRecipient.setWallet(recipientWallet);
-        recipientWallet.getEntries().add(walletEntryRecipient);
-
-        this.walletEntryService.create(walletEntrySender);
-        this.walletEntryService.create(walletEntryRecipient);
+        this.walletEntryService.createWalletEntries(transfer, senderWallet, recipientWallet, amount);
     }
 }
