@@ -9,6 +9,10 @@ import java.math.BigDecimal;
 public interface WalletService {
     WalletResponseDto getCurrentWallet();
 
+    WalletResponseDto getWalletByIban(String iban);
+
+    Wallet getWalletEntityByIban(String iban);
+
     Wallet createWallet(User user);
 
     WalletResponseDto topUpWallet(BigDecimal amount);

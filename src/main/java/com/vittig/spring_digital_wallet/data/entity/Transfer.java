@@ -21,5 +21,7 @@ public class Transfer extends BaseEntity{
     @OneToMany(mappedBy = "transfer")
     private List<WalletEntry> entries;
 
+    private String toIban;
+
     private BigDecimal amount;
 }

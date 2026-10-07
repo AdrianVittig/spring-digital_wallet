@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -24,6 +26,16 @@ public class AuthServiceImpl implements AuthService {
     private final AuthRepository authRepository;
     private final WalletService walletService;
     private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return this.authRepository.findByEmail(email);
+    }
+
+    @Override
+    public Optional<User> findByWalletId(Long walletId) {
+        return this.authRepository.findByWalletId(walletId);
+    }
 
     @Override
     public LoginSuccessfulDto login(LoginRequestDto dto) {

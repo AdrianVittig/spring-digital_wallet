@@ -40,6 +40,21 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
+    public WalletResponseDto getWalletByIban(String iban) {
+        return modelMapper.map(this.walletRepository.findWalletByIban(iban).orElseThrow(
+                () -> new ObjectNotFoundException("Wallet not found!")
+        ), WalletResponseDto.class);
+    }
+
+    @Override
+    public Wallet getWalletEntityByIban(String iban) {
+        return this.walletRepository.findWalletByIban(iban).orElseThrow(
+                () -> new ObjectNotFoundException("Wallet not found!")
+        );
+    }
+
+
+    @Override
     @Transactional
     public Wallet createWallet(User user) {
         Wallet wallet = new Wallet();
@@ -67,9 +82,10 @@ public class WalletServiceImpl implements WalletService {
             throw new InvalidAuthenticationException("Invalid Authentication!");
         }
 
-        User user = (User) auth.getPrincipal();
+        String email = auth.getName();
 
-        Wallet wallet = user.getWallet();
+        Wallet wallet = this.walletRepository.findWalletByEmail(email)
+                .orElseThrow(() -> new ObjectNotFoundException("Wallet not found!"));
 
         wallet.setCurrentBalance(wallet.getCurrentBalance().add(amount));
 
