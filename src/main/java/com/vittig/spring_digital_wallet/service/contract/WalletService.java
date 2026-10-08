@@ -9,9 +9,13 @@ import java.math.BigDecimal;
 public interface WalletService {
     WalletResponseDto getCurrentWallet();
 
-    WalletResponseDto getWalletByIban(String iban);
-
     Wallet getWalletEntityByIban(String iban);
+
+    Wallet getWalletById(Long id);
+
+    Wallet getWalletByIdForUpdate(Long id);
+
+    Wallet getWalletEntityByIbanForUpdate(String iban);
 
     Wallet createWallet(User user);
 

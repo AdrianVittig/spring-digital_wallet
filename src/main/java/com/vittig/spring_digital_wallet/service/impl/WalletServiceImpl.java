@@ -33,17 +33,10 @@ public class WalletServiceImpl implements WalletService {
 
         String email = auth.getName();
 
-        return modelMapper.map(this.walletRepository.findWalletByEmail(email).orElseThrow(
+        return modelMapper.map(this.walletRepository.findWalletByEmailForUpdate(email).orElseThrow(
                         () -> new ObjectNotFoundException("Wallet not found!")
                 ), WalletResponseDto.class
         );
-    }
-
-    @Override
-    public WalletResponseDto getWalletByIban(String iban) {
-        return modelMapper.map(this.walletRepository.findWalletByIban(iban).orElseThrow(
-                () -> new ObjectNotFoundException("Wallet not found!")
-        ), WalletResponseDto.class);
     }
 
     @Override
@@ -53,6 +46,26 @@ public class WalletServiceImpl implements WalletService {
         );
     }
 
+    @Override
+    public Wallet getWalletById(Long id) {
+        return this.walletRepository.findById(id).orElseThrow(
+                () -> new ObjectNotFoundException("Wallet not found!")
+        );
+    }
+
+    @Override
+    public Wallet getWalletByIdForUpdate(Long id) {
+        return this.walletRepository.findByIdForUpdate(id).orElseThrow(
+                () -> new ObjectNotFoundException("Wallet not found!")
+        );
+    }
+
+    @Override
+    public Wallet getWalletEntityByIbanForUpdate(String iban) {
+        return this.walletRepository.findWalletByIbanForUpdate(iban).orElseThrow(
+                () -> new ObjectNotFoundException("Wallet not found!")
+        );
+    }
 
     @Override
     @Transactional
@@ -84,7 +97,7 @@ public class WalletServiceImpl implements WalletService {
 
         String email = auth.getName();
 
-        Wallet wallet = this.walletRepository.findWalletByEmail(email)
+        Wallet wallet = this.walletRepository.findWalletByEmailForUpdate(email)
                 .orElseThrow(() -> new ObjectNotFoundException("Wallet not found!"));
 
         wallet.setCurrentBalance(wallet.getCurrentBalance().add(amount));
