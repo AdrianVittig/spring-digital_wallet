@@ -33,7 +33,7 @@ public class WalletServiceImpl implements WalletService {
 
         String email = auth.getName();
 
-        return modelMapper.map(this.walletRepository.findWalletByEmailForUpdate(email).orElseThrow(
+        return modelMapper.map(this.walletRepository.findWalletByEmail(email).orElseThrow(
                         () -> new ObjectNotFoundException("Wallet not found!")
                 ), WalletResponseDto.class
         );

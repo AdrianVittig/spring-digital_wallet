@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -93,6 +94,9 @@ public class TransferServiceImpl implements TransferService {
         if(sender.getWallet().getId().equals(recipientWallet.getId())){
             throw new InvalidArgumentException("Can not transfer money to yourself!");
         }
+
+        transfer.setFromIban(sender.getWallet().getIban());
+        transfer.setCreatedAt(LocalDateTime.now());
 
         TransferParticipants transferParticipants = lockAndTransferMoney(
                 sender.getWallet().getId(),

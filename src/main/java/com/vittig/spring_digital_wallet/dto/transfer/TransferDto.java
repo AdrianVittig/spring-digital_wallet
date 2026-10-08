@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -13,6 +14,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class TransferDto {
     private Long id;
+    private String fromIban;
     private String toIban;
     private BigDecimal amount;
+    private LocalDateTime createdAt;
 }

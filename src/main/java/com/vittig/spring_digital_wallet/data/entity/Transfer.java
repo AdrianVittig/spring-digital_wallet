@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -18,10 +19,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Transfer extends BaseEntity{
-    @OneToMany(mappedBy = "transfer")
-    private List<WalletEntry> entries;
-
+    private String fromIban;
     private String toIban;
 
     private BigDecimal amount;
+    private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "transfer")
+    private List<WalletEntry> entries;
 }
