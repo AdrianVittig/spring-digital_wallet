@@ -7,6 +7,7 @@ import com.vittig.spring_digital_wallet.data.entity.Wallet;
 import com.vittig.spring_digital_wallet.data.repository.TransferRepository;
 import com.vittig.spring_digital_wallet.data.util.TransferParticipants;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferDto;
+import com.vittig.spring_digital_wallet.dto.transfer.TransferFilterRequestDto;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferRequestDto;
 import com.vittig.spring_digital_wallet.exception.InsufficientFundsException;
 import com.vittig.spring_digital_wallet.exception.InvalidArgumentException;
@@ -38,7 +39,7 @@ public class TransferServiceImpl implements TransferService {
     private final ModelMapperUtil modelMapper;
 
     @Override
-    public List<TransferDto> getTransfersForCurrentUser() {
+    public List<TransferDto> getTransfersForCurrentUser(TransferFilterRequestDto dto) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         if(auth == null){
@@ -51,7 +52,15 @@ public class TransferServiceImpl implements TransferService {
                 () -> new ObjectNotFoundException("User not found!")
         );
 
-        return modelMapper.mapList(this.transferRepository.findTransfersForCurrentUser(user.getWallet().getIban()), TransferDto.class);
+        return modelMapper.mapList(
+                this.transferRepository.findTransfersForWallet(
+                        user.getWallet().getIban(),
+                        dto.getMinAmount(),
+                        dto.getMaxAmount(),
+                        dto.getFromDate(),
+                        dto.getToDate()
+                        ),
+                TransferDto.class);
     }
 
     @Override

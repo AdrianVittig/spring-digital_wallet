@@ -1,6 +1,7 @@
 package com.vittig.spring_digital_wallet.web.controller;
 
 import com.vittig.spring_digital_wallet.dto.transfer.TransferDto;
+import com.vittig.spring_digital_wallet.dto.transfer.TransferFilterRequestDto;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferRequestDto;
 import com.vittig.spring_digital_wallet.service.contract.TransferService;
 import jakarta.validation.Valid;
@@ -16,8 +17,8 @@ public class TransferController {
     private final TransferService transferService;
 
     @GetMapping
-    public List<TransferDto> getTransfersForCurrentUser(){
-        return this.transferService.getTransfersForCurrentUser();
+    public List<TransferDto> getTransfersForCurrentUser(TransferFilterRequestDto dto){
+        return this.transferService.getTransfersForCurrentUser(dto);
     }
 
     @PostMapping
