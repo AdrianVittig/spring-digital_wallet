@@ -3,10 +3,11 @@ package com.vittig.spring_digital_wallet.data.repository;
 import com.vittig.spring_digital_wallet.data.entity.Transfer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface TransferRepository extends JpaRepository<Transfer, Long> {
     @Query("SELECT t FROM Transfer t WHERE " +
@@ -20,6 +21,6 @@ public interface TransferRepository extends JpaRepository<Transfer, Long> {
             "AND " +
             "(:toDate IS NULL OR t.createdAt <= :toDate) " +
             "ORDER BY t.createdAt DESC, t.id ASC")
-    List<Transfer> findTransfersForWallet(String iban, BigDecimal minAmount, BigDecimal maxAmount,
-                                          LocalDateTime fromDate, LocalDateTime toDate);
+    Page<Transfer> findTransfersForWallet(String iban, BigDecimal minAmount, BigDecimal maxAmount,
+                                          LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable);
 }

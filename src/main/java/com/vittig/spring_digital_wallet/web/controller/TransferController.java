@@ -1,5 +1,6 @@
 package com.vittig.spring_digital_wallet.web.controller;
 
+import com.vittig.spring_digital_wallet.dto.page.PageResponseDto;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferDto;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferFilterRequestDto;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferRequestDto;
@@ -11,7 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,8 +30,8 @@ public class TransferController {
                     @ApiResponse(responseCode = "404", description = "User or wallet not found")
             }
     )
-    public List<TransferDto> getTransfersForCurrentUser(TransferFilterRequestDto dto){
-        return this.transferService.getTransfersForCurrentUser(dto);
+    public PageResponseDto<TransferDto> getTransfersForCurrentUser(TransferFilterRequestDto dto, Pageable pageable){
+        return this.transferService.getTransfersForCurrentUser(dto, pageable);
     }
 
     @PostMapping

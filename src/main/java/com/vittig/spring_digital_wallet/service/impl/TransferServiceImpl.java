@@ -6,6 +6,7 @@ import com.vittig.spring_digital_wallet.data.entity.User;
 import com.vittig.spring_digital_wallet.data.entity.Wallet;
 import com.vittig.spring_digital_wallet.data.repository.TransferRepository;
 import com.vittig.spring_digital_wallet.data.util.TransferParticipants;
+import com.vittig.spring_digital_wallet.dto.page.PageResponseDto;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferDto;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferFilterRequestDto;
 import com.vittig.spring_digital_wallet.dto.transfer.TransferRequestDto;
@@ -18,11 +19,13 @@ import com.vittig.spring_digital_wallet.service.contract.TransferService;
 import com.vittig.spring_digital_wallet.service.contract.WalletEntryService;
 import com.vittig.spring_digital_wallet.service.contract.WalletService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,7 +42,7 @@ public class TransferServiceImpl implements TransferService {
     private final ModelMapperUtil modelMapper;
 
     @Override
-    public List<TransferDto> getTransfersForCurrentUser(TransferFilterRequestDto dto) {
+    public PageResponseDto<TransferDto> getTransfersForCurrentUser(TransferFilterRequestDto dto, Pageable pageable) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
         if(auth == null){
@@ -52,15 +55,28 @@ public class TransferServiceImpl implements TransferService {
                 () -> new ObjectNotFoundException("User not found!")
         );
 
-        return modelMapper.mapList(
-                this.transferRepository.findTransfersForWallet(
+        Page<Transfer> transfersPage = this.transferRepository
+                .findTransfersForWallet(
                         user.getWallet().getIban(),
                         dto.getMinAmount(),
                         dto.getMaxAmount(),
                         dto.getFromDate(),
-                        dto.getToDate()
-                        ),
-                TransferDto.class);
+                        dto.getToDate(),
+                        pageable
+                );
+
+        List<TransferDto> content = modelMapper.mapList(transfersPage.getContent(), TransferDto.class);
+
+        PageResponseDto<TransferDto> response = new PageResponseDto<>();
+
+        response.setContent(content);
+        response.setPage(transfersPage.getNumber());
+        response.setSize(transfersPage.getSize());
+        response.setTotalElements(transfersPage.getTotalElements());
+        response.setTotalPages(transfersPage.getTotalPages());
+        response.setLast(transfersPage.isLast());
+
+        return response;
     }
 
     @Override
