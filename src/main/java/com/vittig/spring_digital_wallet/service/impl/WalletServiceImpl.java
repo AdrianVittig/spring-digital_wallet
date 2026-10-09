@@ -10,6 +10,7 @@ import com.vittig.spring_digital_wallet.exception.InvalidAuthenticationException
 import com.vittig.spring_digital_wallet.exception.ObjectNotFoundException;
 import com.vittig.spring_digital_wallet.service.contract.WalletService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -72,15 +73,17 @@ public class WalletServiceImpl implements WalletService {
     public Wallet createWallet(User user) {
         Wallet wallet = new Wallet();
 
-        String iban = generateIban();
-
         wallet.setCurrentBalance(BigDecimal.ZERO);
-        wallet.setIban(iban);
         wallet.setEntries(new ArrayList<>());
 
         syncUserAndWallet(user, wallet);
 
-        return this.walletRepository.save(wallet);
+        this.walletRepository.saveAndFlush(wallet);
+
+        String iban = generateIban(wallet.getId());
+        wallet.setIban(iban);
+
+        return this.walletRepository.saveAndFlush(wallet);
     }
 
     @Override
@@ -107,15 +110,9 @@ public class WalletServiceImpl implements WalletService {
         return modelMapper.map(wallet, WalletResponseDto.class);
     }
 
-    private String generateIban(){
+    private String generateIban(Long id){
         StringBuilder sb = new StringBuilder();
-        sb.append("BG");
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        for(int i = 0; i < 32; i++){
-            int randomIndex = (int) (Math.random() * chars.length());
-            sb.append(chars.charAt(randomIndex));
-        }
-
+        sb.append("BG" + (9999 + id));
         return sb.toString();
     }
 
