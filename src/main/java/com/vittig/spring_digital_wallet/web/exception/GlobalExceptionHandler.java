@@ -4,6 +4,7 @@ import com.vittig.spring_digital_wallet.dto.error.ErrorDto;
 import com.vittig.spring_digital_wallet.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -60,6 +61,25 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 ex.getMessage()
         );
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorDto);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorDto> handleValidationException(
+            MethodArgumentNotValidException ex
+    ) {
+        String message = ex.getBindingResult()
+                .getFieldErrors()
+                .get(0)
+                .getDefaultMessage();
+
+        ErrorDto errorDto = new ErrorDto(
+                HttpStatus.BAD_REQUEST.value(),
+                message
+        );
+
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(errorDto);
