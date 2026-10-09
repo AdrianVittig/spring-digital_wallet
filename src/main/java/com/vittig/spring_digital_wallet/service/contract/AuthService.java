@@ -10,7 +10,6 @@ import java.util.Optional;
 
 public interface AuthService {
     Optional<User> findByEmail(String email);
-    Optional<User> findByWalletId(Long walletId);
     LoginSuccessfulDto login(LoginRequestDto dto);
     RegisterSuccessfulDto register(RegisterRequestDto dto);
 }

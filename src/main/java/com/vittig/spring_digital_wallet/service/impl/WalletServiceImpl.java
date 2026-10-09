@@ -10,7 +10,6 @@ import com.vittig.spring_digital_wallet.exception.InvalidAuthenticationException
 import com.vittig.spring_digital_wallet.exception.ObjectNotFoundException;
 import com.vittig.spring_digital_wallet.service.contract.WalletService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -48,22 +47,8 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public Wallet getWalletById(Long id) {
-        return this.walletRepository.findById(id).orElseThrow(
-                () -> new ObjectNotFoundException("Wallet not found!")
-        );
-    }
-
-    @Override
     public Wallet getWalletByIdForUpdate(Long id) {
         return this.walletRepository.findByIdForUpdate(id).orElseThrow(
-                () -> new ObjectNotFoundException("Wallet not found!")
-        );
-    }
-
-    @Override
-    public Wallet getWalletEntityByIbanForUpdate(String iban) {
-        return this.walletRepository.findWalletByIbanForUpdate(iban).orElseThrow(
                 () -> new ObjectNotFoundException("Wallet not found!")
         );
     }
@@ -111,9 +96,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     private String generateIban(Long id){
-        StringBuilder sb = new StringBuilder();
-        sb.append("BG" + (9999 + id));
-        return sb.toString();
+        return "BG" + (9999 + id);
     }
 
     private void syncUserAndWallet(User user, Wallet wallet){

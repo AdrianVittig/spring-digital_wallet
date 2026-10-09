@@ -8,19 +8,14 @@ import com.vittig.spring_digital_wallet.dto.auth.login.LoginSuccessfulDto;
 import com.vittig.spring_digital_wallet.dto.auth.register.RegisterRequestDto;
 import com.vittig.spring_digital_wallet.dto.auth.register.RegisterSuccessfulDto;
 import com.vittig.spring_digital_wallet.exception.InputValidationException;
-import com.vittig.spring_digital_wallet.exception.InvalidAuthenticationException;
-import com.vittig.spring_digital_wallet.service.contract.AuthService;
 import com.vittig.spring_digital_wallet.service.contract.JwtService;
 import com.vittig.spring_digital_wallet.service.contract.WalletService;
-import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.Optional;
 

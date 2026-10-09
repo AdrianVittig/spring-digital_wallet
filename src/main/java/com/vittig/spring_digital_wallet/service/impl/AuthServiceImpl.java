@@ -33,11 +33,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Optional<User> findByWalletId(Long walletId) {
-        return this.authRepository.findByWalletId(walletId);
-    }
-
-    @Override
     public LoginSuccessfulDto login(LoginRequestDto dto) {
         if(dto.getEmail() == null || dto.getPassword() == null){
             throw new InputValidationException("All fields are required!");

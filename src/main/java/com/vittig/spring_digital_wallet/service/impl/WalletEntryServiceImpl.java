@@ -1,6 +1,5 @@
 package com.vittig.spring_digital_wallet.service.impl;
 
-import com.vittig.spring_digital_wallet.config.ModelMapperUtil;
 import com.vittig.spring_digital_wallet.data.entity.Transfer;
 import com.vittig.spring_digital_wallet.data.entity.Wallet;
 import com.vittig.spring_digital_wallet.data.entity.WalletEntry;
@@ -17,7 +16,6 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class WalletEntryServiceImpl implements WalletEntryService {
     private final WalletEntryRepository walletEntryRepository;
-    private final ModelMapperUtil modelMapper;
 
     @Override
     public void createWalletEntries(Transfer transfer, Wallet sender, Wallet recipient, BigDecimal amount) {

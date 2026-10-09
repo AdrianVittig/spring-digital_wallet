@@ -7,6 +7,7 @@ import com.vittig.spring_digital_wallet.data.repository.WalletRepository;
 import com.vittig.spring_digital_wallet.dto.wallet.WalletResponseDto;
 import com.vittig.spring_digital_wallet.exception.InvalidArgumentException;
 import com.vittig.spring_digital_wallet.exception.InvalidAuthenticationException;
+import com.vittig.spring_digital_wallet.exception.ObjectNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,19 +18,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WalletServiceImplTest {
 
     @InjectMocks
-    private WalletServiceImpl walletServiceImpl;
+    private WalletServiceImpl walletService;
 
     @Mock
     private WalletRepository walletRepository;
@@ -38,12 +40,16 @@ class WalletServiceImplTest {
     private ModelMapperUtil modelMapper;
 
     @BeforeEach
-    void setup(){
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                "testemail@gmail.com",
-                null
-        );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+    void setUp() {
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(
+                        "testemail@google.com",
+                        null
+                );
+
+        SecurityContextHolder
+                .getContext()
+                .setAuthentication(authentication);
     }
 
     @AfterEach
@@ -52,87 +58,168 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void getCurrentWalletShouldReturnWalletForAuthenticatedUser() {
+    void getCurrentWalletShouldReturnWallet() {
         Wallet wallet = new Wallet();
+        WalletResponseDto responseDto = mock(WalletResponseDto.class);
 
-        WalletResponseDto dto = new WalletResponseDto();
-        dto.setCurrentBalance(BigDecimal.ZERO);
+        when(walletRepository.findWalletByEmail("testemail@google.com"))
+                .thenReturn(Optional.of(wallet));
 
-       when(walletRepository.findWalletByEmail("testemail@gmail.com"))
-               .thenReturn(Optional.of(wallet));
+        when(modelMapper.map(wallet, WalletResponseDto.class))
+                .thenReturn(responseDto);
 
-       when(modelMapper.map(wallet, WalletResponseDto.class)).thenReturn(dto);
+        WalletResponseDto result = walletService.getCurrentWallet();
 
-        WalletResponseDto result = walletServiceImpl.getCurrentWallet();
+        assertSame(responseDto, result);
 
-        assertNotNull(result);
-        assertEquals(BigDecimal.ZERO, result.getCurrentBalance());
+        verify(walletRepository)
+                .findWalletByEmail("testemail@google.com");
+
+        verify(modelMapper)
+                .map(wallet, WalletResponseDto.class);
+    }
+
+    @Test
+    void getCurrentWalletShouldThrowWhenAuthenticationIsMissing() {
+        SecurityContextHolder.clearContext();
+
+        assertThrows(
+                InvalidAuthenticationException.class,
+                () -> walletService.getCurrentWallet()
+        );
+
+        verifyNoInteractions(walletRepository);
+    }
+
+    @Test
+    void getCurrentWalletShouldThrowWhenWalletDoesNotExist() {
+        when(walletRepository.findWalletByEmail("testemail@google.com"))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                ObjectNotFoundException.class,
+                () -> walletService.getCurrentWallet()
+        );
     }
 
     @Test
     void createWalletShouldCreateWalletWithZeroBalanceAndIban() {
         User user = new User();
-        user.setEmail("testemail@gmail.com");
 
-        when(walletRepository.save(any(Wallet.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(walletRepository.saveAndFlush(any(Wallet.class)))
+                .thenAnswer(invocation -> {
+                    Wallet wallet = invocation.getArgument(0);
 
-        Wallet result = walletServiceImpl.createWallet(user);
+                    if (wallet.getId() == null) {
+                        ReflectionTestUtils.setField(wallet, "id", 1L);
+                    }
+
+                    return wallet;
+                });
+
+        Wallet result = walletService.createWallet(user);
 
         assertNotNull(result);
         assertEquals(BigDecimal.ZERO, result.getCurrentBalance());
         assertNotNull(result.getIban());
-        assertTrue(result.getIban().startsWith("BG"));
+        assertEquals("BG10000", result.getIban());
         assertSame(user, result.getUser());
         assertSame(result, user.getWallet());
-    }
+        assertNotNull(result.getEntries());
+        assertTrue(result.getEntries().isEmpty());
 
-    @Test
-    void getCurrentWalletShouldThrowExceptionWhenAuthenticationIsMissing(){
-        SecurityContextHolder.getContext().setAuthentication(null);
-        assertThrows(InvalidAuthenticationException.class,
-                () -> walletServiceImpl.getCurrentWallet());
+        verify(walletRepository, times(2))
+                .saveAndFlush(any(Wallet.class));
     }
 
     @Test
     void createWalletShouldPropagateExceptionWhenRepositorySaveFails() {
         User user = new User();
-        user.setEmail("testemail@gmail.com");
 
-        when(walletRepository.save(any(Wallet.class)))
+        when(walletRepository.saveAndFlush(any(Wallet.class)))
                 .thenThrow(new RuntimeException("Database error"));
 
         assertThrows(
                 RuntimeException.class,
-                () -> walletServiceImpl.createWallet(user)
+                () -> walletService.createWallet(user)
         );
+
+        verify(walletRepository)
+                .saveAndFlush(any(Wallet.class));
     }
 
     @Test
     void topUpWalletShouldIncreaseBalance() {
         Wallet wallet = new Wallet();
+        wallet.setCurrentBalance(new BigDecimal("100"));
 
-        WalletResponseDto dto = new WalletResponseDto();
-        dto.setCurrentBalance(new BigDecimal("5.00"));
+        WalletResponseDto responseDto = mock(WalletResponseDto.class);
 
-        wallet.setCurrentBalance(BigDecimal.ZERO);
+        when(walletRepository.findWalletByEmailForUpdate(
+                "testemail@google.com"
+        )).thenReturn(Optional.of(wallet));
 
-        when(walletRepository.findWalletByEmailForUpdate("testemail@gmail.com"))
-                .thenReturn(Optional.of(wallet));
+        when(modelMapper.map(wallet, WalletResponseDto.class))
+                .thenReturn(responseDto);
 
-        when(modelMapper.map(wallet, WalletResponseDto.class)).thenReturn(dto);
+        WalletResponseDto result =
+                walletService.topUpWallet(new BigDecimal("50"));
 
-        when(walletRepository.save(wallet)).thenReturn(wallet);
+        assertEquals(
+                new BigDecimal("150"),
+                wallet.getCurrentBalance()
+        );
 
-        WalletResponseDto result = walletServiceImpl.topUpWallet(new BigDecimal("5.00"));
+        assertSame(responseDto, result);
 
-        assertNotNull(result);
-        assertEquals(new BigDecimal("5.00"), result.getCurrentBalance());
+        verify(walletRepository)
+                .findWalletByEmailForUpdate("testemail@google.com");
+
+        verify(walletRepository)
+                .save(wallet);
     }
 
     @Test
-    void topUpWalletShouldThrowExceptionWhenAmountIsZeroOrNegative() {
-        assertThrows(InvalidArgumentException.class,
-                () -> walletServiceImpl.topUpWallet(new BigDecimal("-5.00")));
+    void topUpWalletShouldThrowWhenAmountIsZero() {
+        assertThrows(
+                InvalidArgumentException.class,
+                () -> walletService.topUpWallet(BigDecimal.ZERO)
+        );
+
+        verifyNoInteractions(walletRepository);
+    }
+
+    @Test
+    void topUpWalletShouldThrowWhenAmountIsNegative() {
+        assertThrows(
+                InvalidArgumentException.class,
+                () -> walletService.topUpWallet(new BigDecimal("-10"))
+        );
+
+        verifyNoInteractions(walletRepository);
+    }
+
+    @Test
+    void topUpWalletShouldThrowWhenAuthenticationIsMissing() {
+        SecurityContextHolder.clearContext();
+
+        assertThrows(
+                InvalidAuthenticationException.class,
+                () -> walletService.topUpWallet(new BigDecimal("50"))
+        );
+
+        verifyNoInteractions(walletRepository);
+    }
+
+    @Test
+    void topUpWalletShouldThrowWhenWalletDoesNotExist() {
+        when(walletRepository.findWalletByEmailForUpdate(
+                "testemail@google.com"
+        )).thenReturn(Optional.empty());
+
+        assertThrows(
+                ObjectNotFoundException.class,
+                () -> walletService.topUpWallet(new BigDecimal("50"))
+        );
     }
 }
