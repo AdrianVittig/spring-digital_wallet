@@ -78,11 +78,10 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(dto.getEmail());
         user.setPassword(this.passwordEncoder.encode(dto.getPassword()));
 
-        Wallet wallet = this.walletService.createWallet(user);
-
-        user.setWallet(wallet);
-
         User savedUser = this.authRepository.save(user);
+
+        Wallet wallet = this.walletService.createWallet(savedUser);
+        user.setWallet(wallet);
 
         String token = jwtService.generateToken(savedUser);
 
