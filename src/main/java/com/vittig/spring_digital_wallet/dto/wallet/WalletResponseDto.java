@@ -17,5 +17,4 @@ public class WalletResponseDto {
     private BigDecimal currentBalance;
     private String iban;
     private Long userId;
-    private List<Long> entriesList;
 }
