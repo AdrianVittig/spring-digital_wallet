@@ -62,6 +62,7 @@ public class TransferServiceImpl implements TransferService {
                         dto.getMaxAmount(),
                         dto.getFromDate(),
                         dto.getToDate(),
+                        dto.getCategory(),
                         pageable
                 );
 
@@ -87,6 +88,8 @@ public class TransferServiceImpl implements TransferService {
         transfer.setAmount(dto.getAmount());
         transfer.setToIban(dto.getToIban());
         transfer.setEntries(new ArrayList<>());
+        transfer.setCategory(dto.getCategory());
+        transfer.setDescription(dto.getDescription());
 
         Transfer savedTransfer = this.transferRepository.save(transfer);
 

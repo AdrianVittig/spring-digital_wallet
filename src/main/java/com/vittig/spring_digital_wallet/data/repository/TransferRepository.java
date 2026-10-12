@@ -1,6 +1,7 @@
 package com.vittig.spring_digital_wallet.data.repository;
 
 import com.vittig.spring_digital_wallet.data.entity.Transfer;
+import com.vittig.spring_digital_wallet.data.util.TransferCategory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.domain.Page;
@@ -20,7 +21,10 @@ public interface TransferRepository extends JpaRepository<Transfer, Long> {
             "(:fromDate IS NULL OR t.createdAt >= :fromDate) " +
             "AND " +
             "(:toDate IS NULL OR t.createdAt <= :toDate) " +
+            "AND " +
+            "(:category IS NULL OR t.category = :category) " +
             "ORDER BY t.createdAt DESC, t.id ASC")
     Page<Transfer> findTransfersForWallet(String iban, BigDecimal minAmount, BigDecimal maxAmount,
-                                          LocalDateTime fromDate, LocalDateTime toDate, Pageable pageable);
+                                          LocalDateTime fromDate, LocalDateTime toDate,
+                                          TransferCategory category, Pageable pageable);
 }

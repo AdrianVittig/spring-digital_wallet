@@ -1,5 +1,6 @@
 package com.vittig.spring_digital_wallet.dto.transfer;
 
+import com.vittig.spring_digital_wallet.data.util.TransferCategory;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,5 +18,7 @@ public class TransferDto {
     private String fromIban;
     private String toIban;
     private BigDecimal amount;
+    private TransferCategory category;
+    private String description;
     private LocalDateTime createdAt;
 }

@@ -1,0 +1,5 @@
+ALTER TABLE transfers
+    ADD COLUMN category
+        enum('FOOD','TRANSPORT','BILLS','ENTERTAINMENT','SHOPPING','HEALTH','EDUCATION','OTHER')
+    NOT NULL DEFAULT 'OTHER',
+    ADD COLUMN description varchar(255) DEFAULT NULL;

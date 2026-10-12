@@ -1,5 +1,6 @@
 package com.vittig.spring_digital_wallet.dto.wallet;
 
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -16,5 +17,6 @@ import java.math.BigDecimal;
 public class TopUpWalletDto {
     @Positive
     @NotNull
+    @Digits(integer = 36, fraction = 2)
     private BigDecimal amount;
 }

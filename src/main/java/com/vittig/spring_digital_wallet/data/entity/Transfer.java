@@ -1,8 +1,7 @@
 package com.vittig.spring_digital_wallet.data.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import com.vittig.spring_digital_wallet.data.util.TransferCategory;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,6 +23,11 @@ public class Transfer extends BaseEntity{
 
     private BigDecimal amount;
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private TransferCategory category;
+
+    private String description;
 
     @OneToMany(mappedBy = "transfer")
     private List<WalletEntry> entries;

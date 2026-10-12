@@ -1,175 +1,280 @@
 # Spring Digital Wallet
 
-Spring Digital Wallet is a backend REST API for a digital wallet system built with Spring Boot, Java 21, Spring Security, JPA/Hibernate, MySQL, and Docker.
+A backend REST API for a digital wallet system built with **Java 21, Spring Boot, Spring Security, JPA/Hibernate, MySQL, and Docker**.
 
-The project focuses on backend development concepts such as authentication, transactional consistency, concurrent balance updates, REST API design, validation, testing, and containerization.
+The project demonstrates practical backend engineering concepts, including secure authentication, transactional money transfers, concurrency control, relational database design, schema migrations, and REST API development.
 
 ## Features
 
+### Authentication & Security
 - User registration and login
-- JWT-based authentication
+- Stateless JWT authentication
 - BCrypt password hashing
-- Automatic wallet creation after registration
-- Public IBAN-like wallet identifier
+- Protected REST endpoints
+- Automatic wallet creation upon registration
+
+### Wallet Management
+- Unique public IBAN-like wallet identifiers
 - Wallet balance retrieval
-- Wallet top-up
-- Transfers between wallets by IBAN
-- Self-transfer prevention
+- Wallet top-up functionality
+- Transfer funds between wallets
+- Prevention of self-transfers
 - Insufficient funds validation
-- Incoming and outgoing wallet ledger entries
-- Transfer history
-- Filtering transfers by amount and date
-- Pagination for transfer history
-- Transactional balance updates
-- Pessimistic locking for concurrent transfers
+
+### Transfers & Transaction Management
+- Atomic transfers using database transactions
+- Pessimistic locking for concurrent balance updates
 - Deterministic wallet locking order to reduce deadlock risk
+- Automatic rollback on transactional failures
+- Incoming and outgoing wallet ledger entries
+- Transfer categories and optional descriptions
+
+### Transfer History
+- Paginated transfer history
+- Incoming and outgoing transfers
+- Filtering by minimum and maximum amount
+- Filtering by date range
+- Filtering by transfer category
+- Sorting transfers by creation date
+
+### Development & Infrastructure
+- Database migrations with Flyway
 - Global exception handling
-- Bean Validation with `@Valid`
+- Request validation using Jakarta Bean Validation
 - Swagger / OpenAPI documentation
-- Dockerized Spring Boot application and MySQL database
-- Unit tests with JUnit 5 and Mockito
+- Dockerized application and MySQL database
+- Unit testing with JUnit 5 and Mockito
 
 ## Tech Stack
 
-- Java 21
-- Spring Boot
-- Spring Web MVC
-- Spring Data JPA
-- Hibernate
-- Spring Security
-- OAuth2 Resource Server
-- JWT
-- MySQL 8
-- Gradle
-- JUnit 5
-- Mockito
-- ModelMapper
-- Lombok
-- SpringDoc OpenAPI / Swagger UI
-- Docker
-- Docker Compose
+| Technology | Purpose |
+|---|---|
+| Java 21 | Programming language |
+| Spring Boot 4.1.1 | Application framework |
+| Spring Web MVC | REST API development |
+| Spring Security | Authentication and authorization |
+| Spring OAuth2 Resource Server | JWT validation |
+| Spring Data JPA / Hibernate | Data persistence |
+| MySQL 8 | Relational database |
+| Flyway | Database versioning and migrations |
+| Gradle | Build and dependency management |
+| Jakarta Bean Validation | Request validation |
+| ModelMapper | Entity and DTO mapping |
+| Lombok | Boilerplate reduction |
+| SpringDoc OpenAPI | API documentation |
+| JUnit 5 / Mockito | Unit testing |
+| Docker / Docker Compose | Containerization |
 
 ## Architecture
 
-The application follows a layered architecture:
+The project follows a layered architecture that separates HTTP handling, business logic, and data persistence.
 
-Controller  
-↓  
-Service  
-↓  
-Repository  
-↓  
-Database
+```text
+Client
+   |
+   v
+REST Controllers
+   |
+   v
+Service Layer
+   |
+   v
+Spring Data JPA Repositories
+   |
+   v
+MySQL Database
+```
 
-Main packages:
+### Main Packages
 
-- `web/controller` — REST controllers and API endpoints
-- `service/contract` — service interfaces
-- `service/impl` — business logic
-- `data/repository` — Spring Data JPA repositories
-- `data/entity` — JPA entities
-- `dto` — request and response models
-- `config` — security, JWT, ModelMapper, and OpenAPI configuration
-- `exception` — custom application exceptions
-- `web/exception` — global exception handling
+```text
+src/main/java/com/vittig/spring_digital_wallet/
+├── config/
+├── data/
+│   ├── entity/
+│   ├── repository/
+│   └── util/
+├── dto/
+├── exception/
+├── service/
+│   ├── contract/
+│   └── impl/
+└── web/
+    ├── controller/
+    └── exception/
+```
+
+The controller layer handles HTTP requests and responses, while the service layer contains the business logic. Repositories provide database access through Spring Data JPA.
+
+## Domain Model
+
+The application uses four main entities:
+
+- **User** — represents a registered user.
+- **Wallet** — stores the current balance, owner, and public wallet identifier.
+- **Transfer** — represents a transfer between wallets, including its amount, category, description, and creation timestamp.
+- **WalletEntry** — represents an incoming or outgoing ledger entry associated with a transfer.
+
+A successful transfer creates two wallet entries:
+
+- `OUTCOMING` — associated with the sender's wallet.
+- `INCOMING` — associated with the recipient's wallet.
+
+Transfers reference wallets using public IBAN-like identifiers rather than exposing internal wallet IDs in transfer requests.
+
+These identifiers are application-generated and are not real banking IBANs.
 
 ## Authentication
 
-Authentication is stateless and based on JWT tokens.
+Authentication is stateless and uses JWT tokens.
 
-After successful registration or login, the API returns a JWT token.
+Successful registration or login returns a token that must be included in subsequent protected API requests.
 
-Protected endpoints require the following header:
+```http
+Authorization: Bearer <jwt_token>
+```
 
-    Authorization: Bearer <token>
+### Registration Example
 
-The authenticated user's email is stored as the JWT subject and is used to identify the current user.
+**POST** `/api/auth/register`
 
-## Wallets
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "confirmPassword": "password123"
+}
+```
 
-A wallet is automatically created when a user registers.
+### Login Example
 
-Each wallet contains:
+**POST** `/api/auth/login`
 
-- Current balance
-- Public IBAN-like identifier
-- Owner
-- Wallet ledger entries
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
 
-The public wallet identifier is derived from the database-generated wallet ID.
+Example authentication response:
 
-Example:
+```json
+{
+  "token": "<jwt_token>"
+}
+```
 
-    Wallet ID: 1
-    IBAN: BG10000
+## Wallet Transfers
 
-Because database IDs are unique, the generated wallet identifiers are also unique and do not depend on random generation.
+Authenticated users can transfer funds to another wallet by providing its public IBAN-like identifier.
 
-The internal database ID is not used by clients when sending money. Transfers are performed using the wallet's public IBAN-like identifier.
+Before a transfer is completed, the application validates the recipient, amount, wallet ownership, and available funds.
 
-## Transfers
+### Create Transfer
 
-Authenticated users can transfer money to another wallet by providing the recipient's IBAN.
+**POST** `/api/transfers`
 
-Before executing a transfer, the application validates that:
+```json
+{
+  "toIban": "BG10001",
+  "amount": 75.50,
+  "category": "SHOPPING",
+  "description": "New headphones"
+}
+```
 
-- The transfer amount is greater than zero
-- The recipient wallet exists
-- The sender is not transferring money to their own wallet
-- The sender has sufficient funds
+The `category` field is required, while `description` is optional and limited to 255 characters.
 
-A successful transfer updates both wallet balances and creates the corresponding ledger entries.
+### Available Transfer Categories
 
-## Transaction and Concurrency Handling
+- `FOOD`
+- `TRANSPORT`
+- `BILLS`
+- `ENTERTAINMENT`
+- `SHOPPING`
+- `HEALTH`
+- `EDUCATION`
+- `OTHER`
 
-Transfers are executed inside a database transaction.
+The transfer response includes the sender and recipient identifiers, amount, category, description, and creation timestamp.
 
-Before wallet balances are modified, both participating wallets are locked using `PESSIMISTIC_WRITE`.
+## Transaction Management & Concurrency
 
-To reduce the risk of deadlocks when two users transfer money in opposite directions at the same time, wallets are always locked in deterministic ID order:
+Money transfers are executed within a database transaction using Spring's `@Transactional` annotation.
 
-smaller wallet ID  
-↓  
-larger wallet ID
+To prevent inconsistent balance updates, the application uses JPA pessimistic locking with `PESSIMISTIC_WRITE`.
 
-After both locks are acquired:
+Both participating wallets are locked in a deterministic order based on their database IDs.
 
-1. The sender's balance is validated
-2. The transfer amount is subtracted from the sender
-3. The transfer amount is added to the recipient
-4. Wallet ledger entries are created
+```text
+Transfer Request
+       |
+       v
+Validate Sender & Recipient
+       |
+       v
+Lock Wallets in ID Order
+       |
+       v
+Validate Available Balance
+       |
+       v
+Update Both Wallet Balances
+       |
+       v
+Create Incoming & Outgoing Entries
+       |
+       v
+Commit Transaction
+```
 
-Because the operation is transactional, a failure causes the entire transfer operation to roll back.
+If an operation fails, the transaction is rolled back to avoid partially completed transfers.
 
-## Transfer History
+Deterministic lock ordering reduces the risk of deadlocks when concurrent transfers involve the same wallets.
 
-Authenticated users can retrieve transfers where their wallet is either the sender or the recipient.
+## Transfer History & Filtering
 
-Supported filters include:
+Authenticated users can retrieve transfers associated with their wallets.
 
-- Minimum amount
-- Maximum amount
-- From date
-- To date
+### Supported Query Parameters
 
-Transfer history also supports pagination.
+| Parameter | Description |
+|---|---|
+| `minAmount` | Minimum transfer amount |
+| `maxAmount` | Maximum transfer amount |
+| `fromDate` | Start of date range |
+| `toDate` | End of date range |
+| `category` | Filter by transfer category |
+| `page` | Zero-based page index |
+| `size` | Number of results per page |
 
-Example request:
+### Example Request
 
-    GET /api/transfers?page=0&size=10&minAmount=10&maxAmount=500
+```http
+GET /api/transfers?category=FOOD&minAmount=10&maxAmount=200&page=0&size=10
+```
 
-Example response:
+Date filters accept date-time values, for example:
 
-    {
-      "content": [],
-      "page": 0,
-      "size": 10,
-      "totalElements": 0,
-      "totalPages": 0,
-      "last": true
-    }
+```text
+fromDate=2026-10-01T00:00:00
+```
 
-Pagination metadata is returned through a custom `PageResponseDto`.
+### Pagination Response
+
+```json
+{
+  "content": [],
+  "page": 0,
+  "size": 10,
+  "totalElements": 0,
+  "totalPages": 0,
+  "last": true
+}
+```
+
+Pagination metadata is returned using a custom `PageResponseDto`.
 
 ## API Endpoints
 
@@ -177,56 +282,67 @@ Pagination metadata is returned through a custom `PageResponseDto`.
 
 | Method | Endpoint | Description | Authentication |
 |---|---|---|---|
-| POST | `/api/auth/register` | Register a new user and return a JWT | No |
-| POST | `/api/auth/login` | Authenticate a user and return a JWT | No |
+| POST | `/api/auth/register` | Register a new user | Public |
+| POST | `/api/auth/login` | Authenticate and obtain JWT | Public |
 
-### Wallet
+### Wallets
 
 | Method | Endpoint | Description | Authentication |
 |---|---|---|---|
-| GET | `/api/wallet` | Get the authenticated user's wallet | Yes |
-| POST | `/api/wallet/top-up` | Add funds to the authenticated user's wallet | Yes |
+| GET | `/api/wallet` | Retrieve current user's wallet | JWT |
+| POST | `/api/wallet/top-up` | Add funds to current wallet | JWT |
 
 ### Transfers
 
 | Method | Endpoint | Description | Authentication |
 |---|---|---|---|
-| GET | `/api/transfers` | Get filtered and paginated transfer history | Yes |
-| POST | `/api/transfers` | Transfer money to another wallet by IBAN | Yes |
+| GET | `/api/transfers` | Retrieve paginated and filtered transfers | JWT |
+| POST | `/api/transfers` | Create a wallet-to-wallet transfer | JWT |
 
-## Error Handling
+## Database Migrations with Flyway
 
-The application uses a global exception handler and returns consistent error responses.
+Database schema changes are managed using **Flyway**, rather than Hibernate automatically modifying database tables.
 
-Example:
+Migration scripts are stored in:
 
-    {
-      "status": 400,
-      "message": "Amount must be greater than 0!"
-    }
+```text
+src/main/resources/db/migration/
+├── V001__create_initial_schema.sql
+└── V002__add_category_and_description_to_transfers.sql
+```
 
-Handled cases include:
+### Migration History
 
-- Invalid request data
-- Bean validation errors
-- Invalid authentication
-- Missing users or wallets
-- Insufficient funds
-- Invalid transfer operations
+| Version | Description |
+|---|---|
+| V001 | Creates the initial database schema, including users, wallets, transfers, and wallet entries |
+| V002 | Adds transfer categories and optional descriptions |
 
-## Swagger / OpenAPI
+Flyway automatically executes pending migrations during application startup.
 
-The API is documented using SpringDoc OpenAPI.
+It also maintains a `flyway_schema_history` table to track migration versions and execution status.
 
-When the application is running, Swagger UI is available at:
+The application uses:
 
-    http://localhost:8084/swagger-ui/index.html
+```properties
+spring.jpa.hibernate.ddl-auto=validate
+```
 
-The OpenAPI specification is available at:
+Hibernate validates entity mappings against the existing schema without creating or modifying tables.
 
-    http://localhost:8084/v3/api-docs
+### Adding Future Migrations
 
-Swagger can be used to inspect and test the available API endpoints.
+New database changes should be introduced through additional versioned SQL files.
+
+For example:
+
+```text
+V003__add_new_feature.sql
+```
+
+Previously applied migrations should remain unchanged. Flyway tracks their checksums and applies new migrations in version order.
+
+This allows database schemas to evolve while preserving existing data.
 
 ## Running with Docker
 
@@ -235,175 +351,160 @@ Swagger can be used to inspect and test the available API endpoints.
 - Docker Desktop or Docker Engine
 - Docker Compose
 
-Create a `.env` file in the project root.
+### 1. Configure Environment Variables
 
-Example:
+Create a `.env` file in the project root:
 
-    MYSQL_DATABASE=spring_digital_wallet
-    MYSQL_USER=wallet_user
-    MYSQL_PASSWORD=your_mysql_password
-    MYSQL_ROOT_PASSWORD=your_mysql_root_password
-    JWT_SECRET=your_secure_jwt_secret
+```dotenv
+MYSQL_DATABASE=spring_digital_wallet
+MYSQL_USER=wallet_user
+MYSQL_PASSWORD=your_mysql_password
+MYSQL_ROOT_PASSWORD=your_mysql_root_password
+JWT_SECRET=replace_with_a_long_random_secret
+```
 
-The `.env` file is ignored by Git and should not be committed.
+Use a strong random JWT secret of at least 32 bytes for HS256.
 
-Start the application with:
+The `.env` file is excluded from Git and must not be committed.
 
-    docker compose up --build
+### 2. Build and Start
 
-The application will be available at:
+```bash
+docker compose up --build
+```
 
-    http://localhost:8084
+Docker Compose starts:
 
-The MySQL container is exposed locally on:
+- MySQL 8 with a persistent database volume
+- Spring Boot REST API
+- Database health checking and startup dependencies
 
-    localhost:3307
+Flyway automatically applies pending migrations when Spring Boot starts.
 
-Inside the Docker network, the Spring Boot application connects to MySQL using:
+### 3. Access the Application
 
-    mysql:3306
+| Service | URL |
+|---|---|
+| REST API | `http://localhost:8084` |
+| Swagger UI | `http://localhost:8084/swagger-ui/index.html` |
+| OpenAPI JSON | `http://localhost:8084/v3/api-docs` |
+| MySQL (from host) | `localhost:3307` |
 
-The Docker Compose setup includes:
+### 4. Stop Containers
 
-- Spring Boot application container
-- MySQL 8 container
-- Persistent MySQL volume
-- MySQL health check
-- Startup dependency between the application and database
+```bash
+docker compose down
+```
 
-Stop the containers with:
+This preserves the MySQL data volume.
 
-    docker compose down
+To remove containers and database volumes:
 
-To stop the containers and remove the MySQL volume:
+```bash
+docker compose down -v
+```
 
-    docker compose down -v
+**Warning:** The `-v` option deletes the persistent database volume and its stored data.
 
 ## Running Locally
 
-The application can also be started directly from the IDE using the `local` Spring profile.
+### Requirements
 
-Local database configuration is stored in `application-local.properties`, which is excluded from Git.
+- Java 21
+- MySQL 8
+- Gradle wrapper (included in the repository)
 
-Example local configuration:
+Configure the following environment variables:
 
-    DB_USERNAME=your_username
-    DB_PASSWORD=your_password
+```dotenv
+DB_URL=jdbc:mysql://localhost:3306/digital_wallet?createDatabaseIfNotExist=true
+DB_USERNAME=your_mysql_username
+DB_PASSWORD=your_mysql_password
+JWT_SECRET=your_secure_jwt_secret
+```
 
-The JWT secret should also be provided through local environment configuration.
+If using the MySQL container from Docker Compose, connect through `localhost:3307` instead of port `3306`.
 
-The application runs on:
+Run the application:
 
-    http://localhost:8084
+```bash
+./gradlew bootRun
+```
 
-## Tests
+On Windows:
 
-The project contains unit tests for the main service-layer functionality.
+```powershell
+.\gradlew.bat bootRun
+```
 
-Covered areas include:
+Alternatively, start the application from an IDE using the `local` Spring profile and local configuration.
 
-- Authentication
-- Wallet operations
-- Wallet creation
+The Docker Compose `.env` file is not automatically loaded as Spring Boot environment variables when running the application outside Docker.
+
+## Testing
+
+The project includes unit tests for the service layer using JUnit 5 and Mockito.
+
+The existing test suite covers core scenarios involving:
+
+- User registration and authentication
+- Wallet creation and retrieval
 - Wallet top-up
-- Transfers
-- Transfer balance updates
+- Transfer execution
+- Balance updates
+- Transfer business rules
 
-Run all tests with:
+Run the tests with:
 
-    ./gradlew test
+```bash
+./gradlew test
+```
 
-A successful test run ends with:
+On Windows:
 
-    BUILD SUCCESSFUL
+```powershell
+.\gradlew.bat test
+```
 
-Tests are implemented using JUnit 5 and Mockito.
+## Error Handling
 
-## Domain Model
+The application uses centralized exception handling through `@RestControllerAdvice`.
 
-The main entities are:
+Handled scenarios include invalid input, authentication failures, missing resources, insufficient funds, and invalid transfer operations.
 
-- `User` — application user
-- `Wallet` — stores the public identifier and current balance
-- `Transfer` — represents a transfer between two wallets
-- `WalletEntry` — represents a ledger entry associated with a wallet and transfer
+Example response:
 
-Relationships conceptually look like this:
+```json
+{
+  "status": 400,
+  "message": "Insufficient funds!"
+}
+```
 
-    User
-      |
-      | owns
-      v
-    Wallet
-      |
-      | has
-      v
-    WalletEntry
-      |
-      | references
-      v
-    Transfer
+Request DTOs use Jakarta Bean Validation to enforce input constraints.
 
-A transfer produces ledger entries for both participating wallets:
+## Swagger / OpenAPI
 
-    Sender wallet    -> OUTCOMING
-    Recipient wallet -> INCOMING
+Interactive API documentation is available through Swagger UI:
 
-The transfer also stores sender and recipient IBAN information together with the amount and creation time.
+**http://localhost:8084/swagger-ui/index.html**
 
-## Security
+OpenAPI specification:
 
-Security-related functionality includes:
+**http://localhost:8084/v3/api-docs**
 
-- BCrypt password hashing
-- Stateless authentication
-- JWT-based authorization
-- Protected API endpoints
-- Public authentication endpoints
-- Pessimistic locking for balance updates
-- Environment-based database credentials
-- Environment-based JWT secret
-- Sensitive configuration files excluded from Git
+Swagger UI can be used to explore endpoints, inspect request and response models, authorize with JWT, and test API operations.
 
-## Project Structure
+## Project Scope
 
-    src/main/java
-    └── com.vittig.spring_digital_wallet
-        ├── config
-        ├── data
-        │   ├── entity
-        │   ├── repository
-        │   └── util
-        ├── dto
-        ├── exception
-        ├── service
-        │   ├── contract
-        │   └── impl
-        └── web
-            ├── controller
-            └── exception
+Spring Digital Wallet is a backend-focused educational and portfolio project designed to demonstrate the implementation of secure APIs, relational persistence, and transactional business logic.
 
-    src/test/java
-    └── com.vittig.spring_digital_wallet
-        └── service
-            └── impl
+The application simulates wallet balances and internal transfers. It does not integrate with real banking systems or payment providers.
 
-## Project Status
+### Future Direction
 
-The backend is implemented and can be run either locally or through Docker Compose.
+The backend is intended to serve as the foundation for a separate Python-based AI application that can interact with wallet data through authenticated REST APIs.
 
-The project demonstrates practical experience with:
+Potential capabilities include financial data analysis, automated insights, reporting, and task orchestration using specialized AI agents.
 
-- Spring Boot backend development
-- REST API design
-- JWT authentication
-- Spring Security
-- JPA / Hibernate
-- Database transactions
-- Concurrency control
-- Pessimistic locking
-- Validation and exception handling
-- Pagination and filtering
-- Unit testing
-- Swagger / OpenAPI
-- Docker and Docker Compose
+The AI application will be developed as a separate component, keeping financial operations and business rules within the Spring Boot backend.
